@@ -1,0 +1,91 @@
+/*----------------------------------------------------------------------------*/
+/* Copyright (c) 2018 FIRST. All Rights Reserved.                             */
+/* Open Source Software - may be modified and shared by FRC teams. The code   */
+/* must be accompanied by the FIRST BSD license file in the root directory of */
+/* the project.                                                               */
+/*----------------------------------------------------------------------------*/
+
+package frc.robot.subsystems;
+
+import edu.wpi.first.wpilibj.command.Subsystem;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
+import com.ctre.phoenix.sensors.PigeonIMU;
+
+import frc.robot.RobotMap;
+import frc.robot.commands.*;
+import frc.robot.Robot;
+
+import edu.wpi.first.wpilibj.PIDController;
+import edu.wpi.first.wpilibj.SPI;
+
+/**
+ * Add your docs here.
+ */
+public class DriveTrain extends Subsystem {
+  // Put methods for controlling this subsystem
+  // here. Call these from Commands.
+
+  public final double driveTrainGain = .015;
+  
+
+  private final WPI_TalonSRX leftMaster = RobotMap.leftMaster;
+  private final WPI_TalonSRX rightMaster = RobotMap.rightMaster;
+  
+  private final DifferentialDrive m_drive;
+
+  private final PigeonIMU pigeon = RobotMap.pigeon;
+
+    
+  public DriveTrain() {
+    m_drive = new DifferentialDrive(leftMaster, rightMaster);
+    m_drive.setSafetyEnabled(false);
+  }
+
+  @Override
+  public void initDefaultCommand() {
+    // Set the default command for a subsystem here.
+    setDefaultCommand(new DriveManual());
+  }
+
+  public void driveTank(double left, double right){
+    m_drive.tankDrive(left, right);
+  }
+    
+  public void driveCurvature(double speed, double  rotation, boolean quickTurn){
+    m_drive.curvatureDrive(speed, rotation, quickTurn);
+  }
+
+  public void stop() {
+    m_drive.stopMotor();
+  }
+
+  public double convertSRXtoInch() {
+    return 1.0 / 4096.0 * (4.0 * Math.PI);
+  }
+
+  public double getLeftDistance() {
+    return leftMaster.getSelectedSensorPosition(0)*convertSRXtoInch();
+  }
+  
+  public double getRightDistance() {
+    return rightMaster.getSelectedSensorPosition(0)*convertSRXtoInch();
+  }
+
+  public double getTotalDistance(){
+    return (getLeftDistance()+getRightDistance()) / 2;
+  }
+
+  public double getYaw() {
+    double [] ypr = new double[3];
+    pigeon.getYawPitchRoll(ypr);
+    return ypr[0];
+  }
+
+  public synchronized void resetEncoders() {
+    leftMaster.setSelectedSensorPosition(0, 0, 10);
+    rightMaster.setSelectedSensorPosition(0, 0, 10);  
+  }
+
+}
